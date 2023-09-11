@@ -5,8 +5,19 @@ import get from 'lodash/get';
 
 import { getOtherInfos, getType } from './getAttributeInfos';
 
-const formatContentTypeData = (data, ct, composSchema) => {
-  const recursiveFormatData = (data, schema) => {
+const formatContentTypeData = <
+  TData extends Record<string, unknown>,
+  TSchema extends Record<string, unknown>,
+  TComponentSchema extends Record<string, object>
+>(
+  data: TData,
+  ct: TSchema,
+  composSchema: TComponentSchema
+) => {
+  const recursiveFormatData = <TDatum extends object, TSchemum extends object>(
+    data: TDatum,
+    schema: TSchemum
+  ) => {
     return Object.keys(data).reduce((acc, current) => {
       const type = getType(schema, current);
       const value = get(data, current);
@@ -25,7 +36,7 @@ const formatContentTypeData = (data, ct, composSchema) => {
         return acc;
       }
 
-      if (type === 'dynamiczone') {
+      if (type === 'dynamiczone' && Array.isArray(value)) {
         acc[current] = value.map((componentValue) => {
           const formattedData = recursiveFormatData(
             componentValue,
@@ -41,7 +52,7 @@ const formatContentTypeData = (data, ct, composSchema) => {
       if (type === 'component') {
         let formattedValue;
 
-        if (isRepeatable) {
+        if (isRepeatable && Array.isArray(value)) {
           formattedValue = value.map((obj, i) => {
             const newObj = { ...obj, __temp_key__: i };
 
@@ -59,7 +70,7 @@ const formatContentTypeData = (data, ct, composSchema) => {
       acc[current] = value;
 
       return acc;
-    }, {});
+    }, {} as Record<string, unknown>);
   };
 
   return recursiveFormatData(data, ct);

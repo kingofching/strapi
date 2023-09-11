@@ -4,13 +4,20 @@ import { getOtherInfos, getType } from './getAttributeInfos';
 
 const defaultFields = ['createdBy', 'updatedBy', 'publishedAt', 'id', '_id'];
 
-const contentManagementUtilRemoveFieldsFromData = (
-  data,
-  contentTypeSchema,
-  componentSchema,
+const contentManagementUtilRemoveFieldsFromData = <
+  TData extends Record<string, unknown>,
+  TSchema extends Record<string, unknown>,
+  TComponentSchema extends Record<string, object>
+>(
+  data: TData,
+  contentTypeSchema: TSchema,
+  componentSchema: TComponentSchema,
   fields = defaultFields
 ) => {
-  const recursiveCleanData = (data, schema) => {
+  const recursiveCleanData = <TDatum extends object, TSchemum extends object>(
+    data: TDatum,
+    schema: TSchemum
+  ) => {
     return Object.keys(data).reduce((acc, current) => {
       const attrType = getType(schema, current);
       const value = get(data, current);
@@ -32,7 +39,7 @@ const contentManagementUtilRemoveFieldsFromData = (
         return acc;
       }
 
-      if (attrType === 'dynamiczone') {
+      if (attrType === 'dynamiczone' && Array.isArray(value)) {
         acc[current] = value.map((componentValue) => {
           const subCleanedData = recursiveCleanData(
             componentValue,
@@ -46,7 +53,7 @@ const contentManagementUtilRemoveFieldsFromData = (
       }
 
       if (attrType === 'component') {
-        if (isRepeatable) {
+        if (isRepeatable && Array.isArray(value)) {
           acc[current] = value.map((compoData) => {
             const subCleanedData = recursiveCleanData(compoData, componentSchema[component]);
 
@@ -60,7 +67,7 @@ const contentManagementUtilRemoveFieldsFromData = (
       }
 
       return acc;
-    }, Object.assign({}, data));
+    }, Object.assign({}, data) as Record<string, unknown>);
   };
 
   return recursiveCleanData(data, contentTypeSchema);
